@@ -1,4 +1,4 @@
-<p align="center"><img src="packaging/logo/raw2fits.svg" alt="raw2fits" width="256"></p>
+<p align="center"><img src="packaging/logo/raw2fits.svg" alt="raw2fits" width="128"></p>
 
 # raw2fits
 
