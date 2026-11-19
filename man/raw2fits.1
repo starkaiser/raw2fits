@@ -1,0 +1,131 @@
+.TH RAW2FITS 1 "November 2026" "raw2fits 1.0.0" "User Commands"
+.SH NAME
+raw2fits \- convert camera RAW files to FITS for astronomical stacking
+.SH SYNOPSIS
+.B raw2fits
+[\fIOPTION\fR]... \fIRAW-FILE\fR...
+.br
+.B raw2fits-par
+[\fB\-j\fR \fIN\fR] [\fIOPTION\fR]... \fIRAW-FILE\fR...
+.br
+.B cafrun \-n
+\fIN\fR
+.B raw2fits-caf
+[\fIOPTION\fR]... \fIRAW-FILE\fR...
+.SH DESCRIPTION
+.B raw2fits
+decodes camera RAW files with LibRaw and writes the unprocessed sensor data
+as 16\-bit FITS images: no demosaicing, white balance or colour conversion.
+The CFA (Bayer) pattern of the written area, exposure time, date, ISO,
+temperature and camera/lens names are stored in the header, so the files
+can be calibrated and stacked directly (e.g. in Siril or ASTAP).
+.PP
+Output files are written next to each RAW file (or into \fB\-\-outdir\fR)
+with the RAW extension replaced: \fIIMG_0001.CR2\fR becomes
+\fIIMG_0001.fits\fR. RAW files that store several channels produce one file
+per channel (\fIIMG_0001.ch1.fits\fR, ...).
+.PP
+Files are converted in parallel by one of two backends. \fBraw2fits\fR uses
+OpenMP threads: \fB\-j\fR \fIN\fR converts \fIN\fR files at a time (default: all
+cores); the release packages use this backend. \fBraw2fits-caf\fR (built with
+\fBmake BACKEND=coarray\fR) is the
+Fortran coarray build. Started with \fBcafrun \-n\fR \fIN\fR,
+it shares the input files between \fIN\fR images that convert in parallel.
+\fBraw2fits-par\fR does this with one image per physical CPU core (or
+\fB\-j\fR \fIN\fR). Use at least 2 images: with Debian/Ubuntu OpenMPI 4.1 a
+coarray program aborts in MPI_Win_create when started as a single image.
+.SH OPTIONS
+.TP
+\fB\-f\fR, \fB\-\-format\fR=\fIFMT\fR
+\fBfits\fR (default), \fBtiff\fR (16\-bit TIFF with FITS cards in the
+ImageDescription tag, "AstroTIFF") or \fBpgm\fR.
+.TP
+\fB\-a\fR, \fB\-\-area\fR=\fIAREA\fR
+\fBactive\fR (default): visible sensor area; \fBfull\fR: whole sensor
+including masked (optical black) pixels; \fBcrop\fR: the camera's default
+crop, or the active area if the file has none.
+.TP
+\fB\-o\fR, \fB\-\-outdir\fR=\fIDIR\fR
+Write the output into \fIDIR\fR, which is created if necessary.
+.TP
+\fB\-e\fR, \fB\-\-keep\-ext\fR
+Keep the RAW extension in the output name (\fIIMG_0001.CR2.fits\fR).
+.TP
+\fB\-\-ext\fR=\fIEXT\fR
+Use \fIEXT\fR as output extension, e.g. \fBfit\fR.
+.TP
+\fB\-S\fR, \fB\-\-skip\-existing\fR
+Do not convert files whose output already exists (resume an interrupted run).
+.TP
+\fB\-n\fR, \fB\-\-dry\-run\fR
+List the planned conversions without writing anything.
+.TP
+\fB\-s\fR, \fB\-\-shot\fR=\fIN\fR
+Select the \fIN\fRth image of multi\-shot RAW files (default 0). For
+\fIN\fR > 0, \fB\-\fR\fIN\fR is appended to the output name.
+.TP
+\fB\-l\fR, \fB\-\-list\fR=\fIFILE\fR
+Read RAW file names from \fIFILE\fR, one per line; empty lines and lines
+starting with \fB#\fR are ignored.
+.TP
+\fB\-A\fR, \fB\-\-autoscale\fR
+Multiply low\-range data by an integer factor so they fill the 16\-bit range.
+.TP
+\fB\-g\fR, \fB\-\-gamma\fR
+Apply gamma 2.2. For visual inspection only: the data are no longer linear.
+.TP
+\fB\-j\fR, \fB\-\-jobs\fR=\fIN\fR
+Number of OpenMP threads converting files at the same time (default 0: all
+cores, or \fBOMP_NUM_THREADS\fR). Ignored by \fBraw2fits-caf\fR.
+.TP
+\fB\-\-schedule\fR=\fBstatic\fR|\fBdynamic\fR
+Coarray build: how files are shared between images: \fBstatic\fR (default) gives
+image \fIk\fR files \fIk\fR, \fIk+N\fR, ...; \fBdynamic\fR lets every image
+take the next unconverted file.
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Report errors only.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Report sensor geometry and processing details for every file.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Show a summary of the options.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Show the program and LibRaw versions and the parallel backend.
+.PP
+Short options can be combined (\fB\-qS\fR) and take their value attached
+(\fB\-ofits\fR) or as the next argument. \fB\-\-\fR ends the options.
+.SH FITS HEADER
+BITPIX = 16 with BZERO = 32768 (unsigned 16\-bit), ROWORDER = 'TOP\-DOWN',
+BAYERPAT/FILT\-PAT and XBAYROFF/YBAYROFF = 0 for the written area, EXPTIME,
+DATE\-OBS, JD, CCD\-TEMP, ISOSPEED, GAIN (= ISO), PEDESTAL* (black levels),
+DATAMAX*, APERTURE, FOCALLEN, CAMMAKER, INSTRUME, TELESCOP (lens), IMG_FLIP,
+RAWAREA, RAWX0, RAWY0 and SWCREATE.
+.SH EXIT STATUS
+0 if all files were converted (or skipped), 1 if any file failed or was not
+supported, 2 for usage errors.
+.SH EXAMPLES
+.nf
+raw2fits *.CR2
+raw2fits \-o fits/ \-a full ~/lights/*.NEF
+raw2fits \-n \-o fits/ *.ARW          # what would be done?
+raw2fits \-j 8 \-o fits/ *.NEF        # 8 threads
+cafrun \-n 4 raw2fits-caf \-S \-o fits/ *.ARW
+raw2fits-par \-j 8 \-o fits/ \-l lights.txt
+.fi
+.SH ENVIRONMENT
+.TP
+.B OMP_NUM_THREADS
+Default number of threads for \fBraw2fits\fR when \fB\-j\fR is not given.
+.TP
+.B RAW2FITS_JOBS
+Default number of images for \fBraw2fits-par\fR.
+.SH NOTES
+DATE\-OBS is derived from the camera's timestamp and is correct UTC only if
+the camera clock was set to the time zone of the converting computer.
+Floating\-point DNG data are scaled linearly to 0..65535.
+.SH SEE ALSO
+.BR cafrun (1),
+.BR siril (1)

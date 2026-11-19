@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=raw2fits
+GenericName=RAW to FITS converter
+Comment=Convert camera RAW files to FITS for astronomical stacking
+Exec=raw2fits %F
+Icon=raw2fits
+Terminal=true
+Categories=Science;Astronomy;
+Keywords=raw;fits;astrophotography;stacking;bayer;

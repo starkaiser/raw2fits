@@ -1,0 +1,52 @@
+#!/bin/sh
+# raw2fits-par - convert RAW files in parallel on several CPU cores.
+#
+# Usage: raw2fits-par [-j N] [raw2fits options] RAW-FILE...
+#
+#   -j N   number of parallel workers (default: $RAW2FITS_JOBS, else the
+#          number of physical CPU cores)
+#
+# Uses the coarray build when available: `cafrun -n N raw2fits-caf ...`
+# (N >= 2: with Debian/Ubuntu's OpenMPI 4.1 a coarray program cannot start as
+# a single image).  Otherwise runs the OpenMP build: `raw2fits -j N ...`.
+set -eu
+
+jobs="${RAW2FITS_JOBS:-}"
+case "${1:-}" in
+  -j)
+    [ $# -ge 2 ] || { echo "raw2fits-par: -j needs a number" >&2; exit 2; }
+    jobs=$2
+    shift 2 ;;
+  -j[0-9]*)
+    jobs=${1#-j}
+    shift ;;
+esac
+
+if [ -z "$jobs" ]; then
+  # Physical cores: OpenMPI refuses more ranks than cores by default.
+  jobs=$(lscpu -p=core,socket 2>/dev/null | grep -v '^#' | sort -u | wc -l | tr -d ' ')
+  [ "$jobs" -ge 1 ] 2>/dev/null || jobs=$(sysctl -n hw.physicalcpu 2>/dev/null || true)   # macOS
+  [ "$jobs" -ge 1 ] 2>/dev/null || jobs=$(sysctl -n hw.ncpu 2>/dev/null || true)          # FreeBSD
+  [ "$jobs" -ge 1 ] 2>/dev/null || jobs=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
+fi
+case "$jobs" in
+  ''|*[!0-9]*|0) echo "raw2fits-par: invalid job count '$jobs'" >&2; exit 2 ;;
+esac
+
+# Find a program next to this script, one level up (source tree) or in PATH.
+find_prog() {
+  here=$(dirname "$0")
+  if [ -x "$here/$1" ]; then echo "$here/$1"
+  elif [ -x "$here/../$1" ]; then echo "$here/../$1"
+  else command -v "$1" || true
+  fi
+}
+
+par=$(find_prog raw2fits-caf)
+if [ "$jobs" -ge 2 ] && [ -n "$par" ] && command -v cafrun >/dev/null 2>&1; then
+  exec cafrun -n "$jobs" "$par" "$@"
+fi
+
+ser=$(find_prog raw2fits)
+[ -n "$ser" ] || { echo "raw2fits-par: raw2fits not found" >&2; exit 2; }
+exec "$ser" -j "$jobs" "$@"

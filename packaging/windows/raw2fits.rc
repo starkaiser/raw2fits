@@ -1,0 +1,36 @@
+// raw2fits.rc - icon, version information and manifest for raw2fits.exe
+// (compiled with windres by `make release-windows`; keep the version in sync
+// with VERSION in the Makefile).
+#include <winver.h>
+
+1 ICON "raw2fits.ico"
+1 24 "raw2fits.exe.manifest"
+
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+FILEFLAGSMASK   0x3fL
+FILEFLAGS       0x0L
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName",      "raw2fits\0"
+      VALUE "FileDescription",  "raw2fits - camera RAW to FITS converter for stacking\0"
+      VALUE "FileVersion",      "1.0.0\0"
+      VALUE "InternalName",     "raw2fits\0"
+      VALUE "LegalCopyright",   "LGPL-2.1 or CDDL-1.0; based on LibRaw's unprocessed_raw sample\0"
+      VALUE "OriginalFilename", "raw2fits.exe\0"
+      VALUE "ProductName",      "raw2fits\0"
+      VALUE "ProductVersion",   "1.0.0\0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200
+  END
+END
