@@ -34,7 +34,7 @@ Two backends are available: threads and coarrays. Threas (OpenMP) are used for r
 **Install dependencies**
 ```
 sudo apt install build-essential gfortran make pkg-config libraw-dev \
-                 libcoarrays-openmpi-dev openmpi-bin   # provides caf / cafrun
+                 libcoarrays-openmpi-dev openmpi-bin
 ```
 
 **Build**
@@ -58,6 +58,35 @@ install gcc gmake
 git clone https://github.com/starkaiser/raw2fits.git
 cd raw2fits
 gmake
+```
+
+### Windows:
+
+Use [MSYS2](https://www.msys2.org) and in a *UCRT64* shell:
+
+**Install dependencies**
+```sh
+pacman -S make curl mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-gcc-fortran
+```
+
+**Build**
+```
+git clone https://github.com/starkaiser/raw2fits.git
+cd raw2fits
+make release-windows
+```
+
+### macOS
+
+**Install dependencies**
+```
+xcode-select --install
+brew install gcc dylibbundler
+```
+
+**Build**
+```
+make release
 ```
 
 ## Credits
